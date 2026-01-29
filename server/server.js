@@ -1,5 +1,7 @@
 import express from "express"
+import 'dotenv/config';
 import { createClient } from 'redis';
+import { getProductDetails, getProducts } from "./getProducts.js";
 const app = express();
 const port = 3000;
 
@@ -14,15 +16,82 @@ const client = createClient({
     }
 });
 
-client.on('error', err => console.log('Redis Client Error', err));
+// 2. Handle connection events
+client.on('error', (err) => console.log('Redis Client Error', err));
+client.on('connect', () => console.log('Connected to Redis successfully!'));
 
-await client.connect();
-
+// 3. Establish the connection (Async)
+(async () => {
+    await client.connect();
+})();
 
 
 app.get('/', (req, res) => {
-  res.send('Hello World!')
+    res.send('Hello World!')
 })
+
+
+app.get("/products", async (req, res) => {
+
+    const exsitProducts = await client.exists("products")
+
+    if (exsitProducts) {
+        console.log("Product from Cached")
+        const products = await client.get("products");
+        return res.json({
+            products: JSON.parse(products)
+        })
+    }
+
+    const products = await getProducts();
+
+    await client.set("products", JSON.stringify(products), {
+        EX: 10
+    })
+
+    res.json({
+        products
+    })
+});
+
+
+app.get("/products/:id", async (req, res) => {
+    const id = req.params.id;
+    const key = `product:${id}`
+
+    const getProduct = await client.get(key);
+    if (getProduct) {
+        console.log("Get from Cached");
+        return res.json({
+            product: JSON.parse(getProduct)
+        })
+    };
+
+    const product = await getProductDetails(id);
+    await client.set(key, JSON.stringify(product));
+
+    res.json({
+        product
+    })
+
+});
+
+
+// invalided manually
+app.get("/order/:id", async (req, res) => {
+    const id = req.params.id;
+    const key= `product:${id}`
+
+    // mutation stuff from db
+
+    // guess we do have store in redis, now need to invalid or delelte from redis
+    await client.del(key)
+
+    return res.json({
+        order: `Order successfully placed: ${id}`
+    })
+})
+
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
