@@ -2,12 +2,13 @@ import express from "express"
 import 'dotenv/config';
 import { createClient } from 'redis';
 import { getProductDetails, getProducts } from "./getProducts.js";
+import { getCachedData } from "./middleware/redis.js";
 const app = express();
 const port = 3000;
 
 app.use(express.json());
 
-const client = createClient({
+export const client = createClient({
     username: 'default',
     password: process.env.REDIS_PASS,
     socket: {
@@ -26,22 +27,43 @@ client.on('connect', () => console.log('Connected to Redis successfully!'));
 })();
 
 
-app.get('/', (req, res) => {
-    res.send('Hello World!')
+app.get('/', async (req, res) => {
+
+    console.log("here is my IP: ", req.ip)
+
+    const clientIP = req.ip;
+
+
+    const requestCount = await client.incr(clientIP);
+
+    if(requestCount === 2){
+        await client.expire(clientIP, 60)
+    }
+
+    const timeLeave = await client.ttl(clientIP);
+
+
+
+    if(requestCount > 5){
+        return res.status(409).send(`Too many request: ${timeLeave}`)
+    }
+
+
+    res.send(`Hello World ${requestCount}`)
 })
 
 
-app.get("/products", async (req, res) => {
+app.get("/products", getCachedData("products"), async (req, res) => {
 
-    const exsitProducts = await client.exists("products")
+    // const exsitProducts = await client.exists("products")
 
-    if (exsitProducts) {
-        console.log("Product from Cached")
-        const products = await client.get("products");
-        return res.json({
-            products: JSON.parse(products)
-        })
-    }
+    // if (exsitProducts) {
+    //     console.log("Product from Cached")
+    //     const products = await client.get("products");
+    //     return res.json({
+    //         products: JSON.parse(products)
+    //     })
+    // }
 
     const products = await getProducts();
 
@@ -80,7 +102,7 @@ app.get("/products/:id", async (req, res) => {
 // invalided manually
 app.get("/order/:id", async (req, res) => {
     const id = req.params.id;
-    const key= `product:${id}`
+    const key = `product:${id}`
 
     // mutation stuff from db
 
