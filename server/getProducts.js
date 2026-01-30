@@ -28,3 +28,13 @@ export const getProductDetails = async (id) => {
         }, 2000);
     });
 };
+
+export const getProductOne = (id) => {
+
+    return {
+        id: id,
+        name: `product ${id}`,
+        price: id
+    }
+
+};

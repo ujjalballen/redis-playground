@@ -1,7 +1,7 @@
 import express from "express"
 import 'dotenv/config';
 import { createClient } from 'redis';
-import { getProductDetails, getProducts } from "./getProducts.js";
+import { getProductDetails, getProductOne, getProducts } from "./getProducts.js";
 import { getCachedData } from "./middleware/redis.js";
 const app = express();
 const port = 3000;
@@ -112,6 +112,33 @@ app.get("/order/:id", async (req, res) => {
     return res.json({
         order: `Order successfully placed: ${id}`
     })
+});
+
+
+// LISTS
+
+app.get("/products/add/:id", async(req, res) => {
+    const productId = req.params.id;
+
+    const getProduct = getProductOne(productId);
+    console.log(getProduct)
+
+    // await client.lPush("products", JSON.stringify(getProduct))
+    // await client.RPUSH("products", JSON.stringify(getProduct))
+
+    // await client.RPOP("products")
+
+//    const final = await client.LLEN("products")
+
+    // await client.LPOP("products")
+
+    // read all lists
+    const getAll = await client.LRANGE("products", 0, -1);
+
+    const result = [getProduct];
+
+    res.json({result: getAll})
+
 })
 
 
