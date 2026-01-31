@@ -1,7 +1,7 @@
 import express from "express"
 import 'dotenv/config';
 import { createClient } from 'redis';
-import { getProductDetails, getProductOne, getProducts } from "./getProducts.js";
+import { getProductDetails, getProductOne, getProducts, inventoryJSON } from "./getProducts.js";
 import { getCachedData } from "./middleware/redis.js";
 const app = express();
 const port = 3000;
@@ -230,6 +230,8 @@ app.get("/json", async (req, res) => {
 
     // set
     // const result = await client.json.set("room:1", "$", newRoom);
+    // const result = await client.json.set("room:1", "$.roomTitle", "This is Room one")
+    const result = await client.json.set("room:1", "$.roomId", 55555)
 
     //get
     // const result = await client.json.get("room:1")
@@ -258,7 +260,26 @@ app.get("/json", async (req, res) => {
 
     // const result = await client.json.arrAppend("room:1", "$.clients", { name: "ujjal4", role: 4 })
 
-    const result = await client.json.arrPop("room:1", "$.clients", 1);
+    res.json({ result })
+})
+
+
+app.get("/json-path", async (req, res) => {
+
+    // const result = await client.json.set("bikes:inventory", "$", inventoryJSON);
+    // const result = await client.json.get("bikes:inventory", "$.inventory")
+    // const result = await client.json.get("bikes:inventory", { path: "$.inventory.*" })
+    // const result = await client.json.get("bikes:inventory", "$.inventory.*")
+
+    // const result = await client.json.get("bikes:inventory", {path: "$.inventory.mountain_bikes[*].model"})
+    // const result = await client.json.get("bikes:inventory", {path: "$..mountain_bikes[*].model"})
+    // const result = await client.json.get("bikes:inventory", {path: "$..model"})
+
+    const delId= "bike:1";
+    // const result = await client.json.get("bikes:inventory", {path: ".inventory.mountain_bikes"})
+    // const result = await client.json.get("bikes:inventory", {path: "$.inventory.mountain_bikes"})
+    const result = await client.json.del("bikes:inventory", {path: "$.inventory.mountain_bikes[?(@.id=='bike:1')]"})
+
     res.json({ result })
 })
 
