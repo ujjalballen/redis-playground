@@ -203,7 +203,7 @@ app.get("/sorted-sets", async (req, res) => {
 app.get("/users", async (req, res) => {
 
     const cachedValue = await client.get("users");
-    if(cachedValue){
+    if (cachedValue) {
         return res.json(JSON.parse(cachedValue))
     }
 
@@ -214,9 +214,55 @@ app.get("/users", async (req, res) => {
     await client.set("users", JSON.stringify(data))
     await client.expire('users', 40)
 
-   return res.json({ data })
+    return res.json({ data })
 
 })
+
+//JSON
+app.get("/json", async (req, res) => {
+    const newRoom = {
+        roomId: 2451,
+        roomTitle: "Hello there",
+        clients: [{ one: 1 }, { two: 2 }]
+    }
+
+    const demo = ["Deimos", { "crashes": 0 }]
+
+    // set
+    // const result = await client.json.set("room:1", "$", newRoom);
+
+    //get
+    // const result = await client.json.get("room:1")
+
+    //make the object in array
+    // const result = await client.json.get("room:1", {path: "$"})
+
+    // const result = await client.json.set("demo", "$", demo)
+    // const result = await client.json.get("demo", { path: "$.[-1]" })
+
+    // const result = await client.json.set("demo:2", '$', [])
+    // const result = await client.json.arrAppend("demo:2", "$", {alright: "Ok"})
+
+    // const result = await client.json.get("demo:2", {path: "$"})
+
+    // const result = await client.json.get("demo:2", "$")
+
+    // const result = await client.json.arrInsert("demo:2", "$", 1, "Prickett", "Royse", "Castilla")
+
+    // const result = await client.json.arrTrim("demo:2", "$", 1, 1)
+
+    // const result = await client.json.arrPop("demo:2", { path: "$" })
+
+    // const result = await client.json.objLen("room:1", {path: "$"})
+    // const result = await client.json.objLen("room:1", "$")
+
+    // const result = await client.json.arrAppend("room:1", "$.clients", { name: "ujjal4", role: 4 })
+
+    const result = await client.json.arrPop("room:1", "$.clients", 1);
+    res.json({ result })
+})
+
+
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
